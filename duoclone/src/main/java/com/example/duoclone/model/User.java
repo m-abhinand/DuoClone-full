@@ -5,6 +5,10 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Document(collection = "users")
 public class User {
 
@@ -19,9 +23,10 @@ public class User {
     
     @Field("password")
     private String password;
-    
-    @Field("role")
-    private String role;
+    private String role = "ROLE_USER";
+    private LocalDateTime createdAt;
+    private List<String> enrolledCourses = new ArrayList<>();
+    private List<String> likedCourses = new ArrayList<>();
 
     public User() {
         this.role = "USER";
@@ -65,5 +70,29 @@ public class User {
  
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<String> getEnrolledCourses() {
+        return enrolledCourses;
+    }
+
+    public void setEnrolledCourses(List<String> enrolledCourses) {
+        this.enrolledCourses = enrolledCourses;
+    }
+
+    public List<String> getLikedCourses() {
+        return likedCourses;
+    }
+
+    public void setLikedCourses(List<String> likedCourses) {
+        this.likedCourses = likedCourses;
     }
 }

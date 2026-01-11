@@ -69,10 +69,14 @@ public class AuthController {
                 response.put("message", "User registered successfully");
             }
             
+            // Set the createdAt timestamp
+            user.setCreatedAt(java.time.LocalDateTime.now());
+
             User savedUser = userRepository.save(user);
 
             response.put("userId", savedUser.getId());
             response.put("role", savedUser.getRole());
+            response.put("createdAt", savedUser.getCreatedAt().toString());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (Exception e) {
@@ -164,6 +168,7 @@ public class AuthController {
             response.put("name", user.getName());
             response.put("email", user.getEmail());
             response.put("role", user.getRole());
+            response.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
             System.out.println("✅ Login successful for: " + email);
             System.out.println("====================================\n");

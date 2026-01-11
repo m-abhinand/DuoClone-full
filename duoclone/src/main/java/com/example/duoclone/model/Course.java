@@ -26,6 +26,7 @@ public class Course {
     private String duration;
     private Integer totalLessons;
     private Integer totalExercises;
+    private Integer likeCount = 0; // Track number of likes
     
     // New fields for detailed course content
     private List<TechnicalContent> technicalContent;

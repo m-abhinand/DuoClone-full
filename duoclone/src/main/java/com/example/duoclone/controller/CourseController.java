@@ -77,10 +77,15 @@ public class CourseController {
                 response.put("progress", 0);
                 response.put("completed", false);
             }
+            
+            // Add like status
+            boolean isLiked = user.getLikedCourses() != null && user.getLikedCourses().contains(id);
+            response.put("liked", isLiked);
         } else {
             response.put("enrolled", false);
             response.put("progress", 0);
             response.put("completed", false);
+            response.put("liked", false);
         }
         
         return ResponseEntity.ok(response);
@@ -185,5 +190,121 @@ public class CourseController {
         response.put("progress", userCourse.getProgress());
         
         return ResponseEntity.ok(response);
+    }
+
+    // Like/Unlike endpoints
+    @PostMapping("/{id}/like")
+    public ResponseEntity<?> likeCourse(@PathVariable String id, Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "User not found"));
+        }
+        
+        Course course = courseRepository.findById(id).orElse(null);
+        if (course == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Course not found"));
+        }
+        
+        // Initialize likedCourses if null
+        if (user.getLikedCourses() == null) {
+            user.setLikedCourses(new java.util.ArrayList<>());
+        }
+        
+        // Add to liked courses if not already liked
+        if (!user.getLikedCourses().contains(id)) {
+            user.getLikedCourses().add(id);
+            userRepository.save(user);
+            System.out.println("User " + userEmail + " liked course: " + course.getName());
+        }
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "Course liked successfully",
+            "liked", true
+        ));
+    }
+
+    @DeleteMapping("/{id}/like")
+    public ResponseEntity<?> unlikeCourse(@PathVariable String id, Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "User not found"));
+        }
+        
+        // Remove from liked courses
+        if (user.getLikedCourses() != null && user.getLikedCourses().contains(id)) {
+            user.getLikedCourses().remove(id);
+            userRepository.save(user);
+            
+            Course course = courseRepository.findById(id).orElse(null);
+            String courseName = course != null ? course.getName() : id;
+            System.out.println("User " + userEmail + " unliked course: " + courseName);
+        }
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "Course unliked successfully",
+            "liked", false
+        ));
+    }
+
+    @GetMapping("/liked")
+    public ResponseEntity<?> getLikedCourses(Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "User not found"));
+        }
+        
+        if (user.getLikedCourses() == null || user.getLikedCourses().isEmpty()) {
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+        }
+        
+        // Return set of liked course IDs
+        return ResponseEntity.ok(user.getLikedCourses());
+    }
+
+    @DeleteMapping("/{id}/unenroll")
+    public ResponseEntity<?> unenrollCourse(@PathVariable String id, Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "User not found"));
+        }
+        
+        Course course = courseRepository.findById(id).orElse(null);
+        if (course == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Course not found"));
+        }
+        
+        // Find and delete the user course enrollment
+        UserCourse userCourse = userCourseRepository
+            .findByUserIdAndCourseId(user.getId(), id)
+            .orElse(null);
+        
+        if (userCourse == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "You are not enrolled in this course"));
+        }
+        
+        // Delete the enrollment
+        userCourseRepository.delete(userCourse);
+        
+        System.out.println("User " + userEmail + " unenrolled from course: " + course.getName());
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "Successfully unenrolled from course",
+            "courseName", course.getName()
+        ));
     }
 }
