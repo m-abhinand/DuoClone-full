@@ -1,0 +1,18 @@
+[
+  {
+    "category": "JAVA",
+    "question": "What will be the output?",
+    "codeSnippet": "int x = 5;\nSystem.out.println(x++ + ++x);",
+    "options": ["10", "11", "12", "13"],
+    "correctAnswer": "12",
+    "difficulty": 2
+  },
+  {
+    "category": "JAVA",
+    "question": "Which keyword is used for inheritance?",
+    "codeSnippet": null,
+    "options": ["this", "extends", "super", "implements"],
+    "correctAnswer": "extends",
+    "difficulty": 1
+  }
+]

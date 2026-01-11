@@ -1,0 +1,110 @@
+{
+  "name": "Advanced Java Programming",
+  "description": "Master advanced Java concepts including multithreading, collections, and design patterns",
+  "fullDescription": "This comprehensive course covers advanced Java programming concepts. You'll learn about concurrent programming, advanced collections framework, lambda expressions, streams API, and common design patterns used in enterprise applications. Perfect for developers looking to take their Java skills to the next level.",
+  "level": "Advanced",
+  "duration": "~12 hours",
+  "totalLessons": 25,
+  "totalExercises": 60,
+  "curriculum": [
+    "Multithreading and Concurrency",
+    "Java Collections Framework Deep Dive",
+    "Lambda Expressions and Functional Interfaces",
+    "Streams API and Parallel Processing",
+    "Design Patterns in Java",
+    "Exception Handling Best Practices",
+    "Java I/O and NIO",
+    "Generics and Type Safety",
+    "Reflection and Annotations",
+    "Memory Management and Garbage Collection"
+  ],
+  "technicalContent": [
+    {
+      "title": "Understanding Java Threads",
+      "content": "Threads are lightweight processes that allow concurrent execution of code. In Java, you can create threads by extending the Thread class or implementing the Runnable interface. Understanding thread lifecycle, synchronization, and communication is crucial for building efficient applications.",
+      "codeExample": "public class MyThread extends Thread {\n    @Override\n    public void run() {\n        System.out.println(\"Thread is running: \" + Thread.currentThread().getName());\n    }\n}\n\npublic class Main {\n    public static void main(String[] args) {\n        MyThread thread1 = new MyThread();\n        MyThread thread2 = new MyThread();\n        thread1.start();\n        thread2.start();\n    }\n}",
+      "language": "java"
+    },
+    {
+      "title": "Java Collections Framework",
+      "content": "The Collections Framework provides a set of interfaces and classes to store and manipulate groups of objects. Key interfaces include List, Set, Map, and Queue. Understanding when to use ArrayList vs LinkedList, HashMap vs TreeMap is essential for writing efficient code.",
+      "codeExample": "import java.util.*;\n\npublic class CollectionsDemo {\n    public static void main(String[] args) {\n        // List example\n        List<String> list = new ArrayList<>();\n        list.add(\"Java\");\n        list.add(\"Python\");\n        \n        // Map example\n        Map<String, Integer> map = new HashMap<>();\n        map.put(\"Java\", 1);\n        map.put(\"Python\", 2);\n        \n        // Iterating with forEach\n        list.forEach(System.out::println);\n        map.forEach((k, v) -> System.out.println(k + \": \" + v));\n    }\n}",
+      "language": "java"
+    },
+    {
+      "title": "Lambda Expressions",
+      "content": "Lambda expressions provide a clear and concise way to represent functional interfaces using an expression. They enable you to treat functionality as a method argument, or code as data. Lambdas are the foundation of functional programming in Java.",
+      "codeExample": "import java.util.*;\nimport java.util.stream.Collectors;\n\npublic class LambdaExample {\n    public static void main(String[] args) {\n        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);\n        \n        // Filter even numbers\n        List<Integer> evenNumbers = numbers.stream()\n            .filter(n -> n % 2 == 0)\n            .collect(Collectors.toList());\n        \n        // Map to squares\n        List<Integer> squares = numbers.stream()\n            .map(n -> n * n)\n            .collect(Collectors.toList());\n        \n        System.out.println(\"Even numbers: \" + evenNumbers);\n        System.out.println(\"Squares: \" + squares);\n    }\n}",
+      "language": "java"
+    },
+    {
+      "title": "Singleton Design Pattern",
+      "content": "The Singleton pattern ensures that a class has only one instance and provides a global point of access to it. This is useful for managing shared resources like database connections or configuration settings.",
+      "codeExample": "public class Singleton {\n    private static Singleton instance;\n    \n    // Private constructor prevents instantiation\n    private Singleton() {}\n    \n    // Thread-safe getInstance method\n    public static synchronized Singleton getInstance() {\n        if (instance == null) {\n            instance = new Singleton();\n        }\n        return instance;\n    }\n    \n    public void showMessage() {\n        System.out.println(\"Hello from Singleton!\");\n    }\n}\n\n// Usage\npublic class Main {\n    public static void main(String[] args) {\n        Singleton singleton = Singleton.getInstance();\n        singleton.showMessage();\n    }\n}",
+      "language": "java"
+    },
+    {
+      "title": "Exception Handling Best Practices",
+      "content": "Proper exception handling is crucial for building robust applications. Always catch specific exceptions, use try-with-resources for automatic resource management, and never catch Exception or Throwable unless absolutely necessary. Custom exceptions should extend appropriate base classes.",
+      "codeExample": "import java.io.*;\n\npublic class ExceptionHandling {\n    // Try-with-resources\n    public void readFile(String path) {\n        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {\n            String line;\n            while ((line = reader.readLine()) != null) {\n                System.out.println(line);\n            }\n        } catch (FileNotFoundException e) {\n            System.err.println(\"File not found: \" + e.getMessage());\n        } catch (IOException e) {\n            System.err.println(\"IO error: \" + e.getMessage());\n        }\n    }\n    \n    // Custom exception\n    public class InvalidAgeException extends Exception {\n        public InvalidAgeException(String message) {\n            super(message);\n        }\n    }\n}",
+      "language": "java"
+    }
+  ],
+  "mcqQuestions": [
+    {
+      "question": "Which method is used to start a thread in Java?",
+      "options": [
+        "run()",
+        "start()",
+        "execute()",
+        "begin()"
+      ],
+      "correctAnswerIndex": 1,
+      "explanation": "The start() method is used to start a thread. It creates a new thread and calls the run() method. Calling run() directly would execute it in the current thread, not create a new one."
+    },
+    {
+      "question": "What is the time complexity of ArrayList's get() operation?",
+      "options": [
+        "O(n)",
+        "O(log n)",
+        "O(1)",
+        "O(n^2)"
+      ],
+      "correctAnswerIndex": 2,
+      "explanation": "ArrayList's get() operation has O(1) time complexity because it uses array indexing internally. Elements can be accessed directly by their index."
+    },
+    {
+      "question": "Which functional interface is used for lambda expressions that take one argument and return a result?",
+      "options": [
+        "Consumer",
+        "Supplier",
+        "Function",
+        "Predicate"
+      ],
+      "correctAnswerIndex": 2,
+      "explanation": "Function<T, R> is used for lambda expressions that take one argument of type T and return a result of type R. Consumer takes input but returns void, Supplier takes no input, and Predicate returns boolean."
+    },
+    {
+      "question": "What is the main purpose of the volatile keyword in Java?",
+      "options": [
+        "To make a variable constant",
+        "To ensure thread visibility of changes",
+        "To improve performance",
+        "To make a variable immutable"
+      ],
+      "correctAnswerIndex": 1,
+      "explanation": "The volatile keyword ensures that changes to a variable are immediately visible to all threads. It prevents caching of the variable's value in thread-local memory."
+    },
+    {
+      "question": "Which design pattern ensures a class has only one instance?",
+      "options": [
+        "Factory Pattern",
+        "Observer Pattern",
+        "Singleton Pattern",
+        "Builder Pattern"
+      ],
+      "correctAnswerIndex": 2,
+      "explanation": "The Singleton pattern ensures a class has only one instance and provides a global point of access to it. It's commonly used for managing shared resources."
+    }
+  ]
+}
