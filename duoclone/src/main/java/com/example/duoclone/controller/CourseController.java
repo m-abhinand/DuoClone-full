@@ -307,4 +307,34 @@ public class CourseController {
             "courseName", course.getName()
         ));
     }
+
+    @PutMapping("/user/profile")
+    public ResponseEntity<?> updateUserProfile(
+        @RequestBody Map<String, String> profileData,
+        Authentication authentication
+    ) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "User not found"));
+        }
+        
+        // Update name if provided
+        if (profileData.containsKey("name") && !profileData.get("name").trim().isEmpty()) {
+            user.setName(profileData.get("name").trim());
+        }
+        
+        // Save updated user
+        userRepository.save(user);
+        
+        System.out.println("User profile updated for: " + userEmail);
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "Profile updated successfully",
+            "name", user.getName(),
+            "email", user.getEmail()
+        ));
+    }
 }

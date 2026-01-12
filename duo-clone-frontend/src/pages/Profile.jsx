@@ -12,6 +12,10 @@ function Profile() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState(null)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState('')
   const { theme, toggleTheme } = useContext(ThemeContext)
 
   // Format join date from user's createdAt
@@ -154,6 +158,45 @@ function Profile() {
     setShowProfileMenu(!showProfileMenu)
   }
 
+  const handleEditProfile = () => {
+    setEditName(user.name)
+    setEditError('')
+    setShowEditModal(true)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      setEditError('Name cannot be empty')
+      return
+    }
+
+    setEditLoading(true)
+    setEditError('')
+
+    try {
+      const response = await apiService.updateUserProfile({ name: editName.trim() })
+      
+      // Update local state
+      setUser(prev => ({
+        ...prev,
+        name: response.name
+      }))
+      
+      // Update current user context
+      const updatedUser = { ...currentUser, name: response.name }
+      setCurrentUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      
+      setShowEditModal(false)
+      alert('Profile updated successfully!')
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setEditError(error.response?.data?.error || 'Failed to update profile')
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   if (!currentUser) {
     return <div className="profile-page"><p>Loading...</p></div>
   }
@@ -228,7 +271,7 @@ function Profile() {
               <p className="profile-join-date">Member since {user.joinDate}</p>
             </div>
             <div className="profile-header-actions">
-              <button className="btn-edit-profile">Edit Profile</button>
+              <button className="btn-edit-profile" onClick={handleEditProfile}>Edit Profile</button>
             </div>
           </div>
         </section>
@@ -380,6 +423,62 @@ function Profile() {
           )}
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <>
+          <div className="modal-overlay" onClick={() => !editLoading && setShowEditModal(false)} />
+          <div className="edit-profile-modal">
+            <div className="modal-header">
+              <h3>Edit Profile</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)} disabled={editLoading}>×</button>
+            </div>
+            <div className="modal-body">
+              {editError && <div className="error-message">{editError}</div>}
+              
+              <div className="form-group">
+                <label htmlFor="edit-name">Name</label>
+                <input
+                  type="text"
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter your name"
+                  disabled={editLoading}
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="edit-email">Email (cannot be changed)</label>
+                <input
+                  type="email"
+                  id="edit-email"
+                  value={user.email}
+                  disabled
+                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setShowEditModal(false)}
+                disabled={editLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handleSaveProfile}
+                disabled={editLoading || !editName.trim()}
+              >
+                {editLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

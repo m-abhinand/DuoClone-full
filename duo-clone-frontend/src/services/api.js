@@ -163,4 +163,12 @@ export const apiService = {
     const response = await axiosInstance.delete(`/admin/courses/${courseId}`);
     return response.data;
   },
+
+  updateUserProfile: async (profileData) => {
+    const response = await axiosInstance.put(
+      '/course/user/profile',
+      profileData
+    );
+    return response.data;
+  },
 };

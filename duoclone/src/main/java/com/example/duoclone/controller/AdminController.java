@@ -1,5 +1,7 @@
 package com.example.duoclone.controller;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.duoclone.model.Course;
 import com.example.duoclone.model.User;
+import com.example.duoclone.model.UserCourse;
+import com.example.duoclone.model.UserProgress;
 import com.example.duoclone.repository.CourseRepository;
 import com.example.duoclone.repository.UserCourseRepository;
+import com.example.duoclone.repository.UserProgressRepository;
 import com.example.duoclone.repository.UserRepository;
 
 @RestController
@@ -23,13 +28,16 @@ public class AdminController {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final UserCourseRepository userCourseRepository;
+    private final UserProgressRepository userProgressRepository;
 
     public AdminController(UserRepository userRepository,
                           CourseRepository courseRepository,
-                          UserCourseRepository userCourseRepository) {
+                          UserCourseRepository userCourseRepository,
+                          UserProgressRepository userProgressRepository) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.userCourseRepository = userCourseRepository;
+        this.userProgressRepository = userProgressRepository;
     }
 
     @GetMapping("/dashboard")
@@ -160,20 +168,160 @@ public class AdminController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
             
-            long enrolledCount = userCourseRepository.countByUserId(user.getId());
-            long completedCount = userCourseRepository.countByUserIdAndCompleted(user.getId(), true);
-            
+            // Basic user info
             response.put("id", user.getId());
             response.put("name", user.getName());
             response.put("email", user.getEmail());
             response.put("role", user.getRole());
-            response.put("enrolledCourses", (int) enrolledCount);
+            
+            // Format created at date
+            if (user.getCreatedAt() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+                response.put("createdAt", user.getCreatedAt().format(formatter));
+                response.put("memberSince", user.getCreatedAt().format(formatter));
+            }
+            
+            // Get enrolled courses data
+            List<UserCourse> userCourses = userCourseRepository.findByUserId(user.getId());
+            long completedCount = userCourses.stream().filter(UserCourse::isCompleted).count();
+            
+            response.put("enrolledCourses", userCourses.size());
             response.put("completedCourses", (int) completedCount);
+            response.put("activeCourses", userCourses.size() - (int) completedCount);
+            
+            // Get detailed course information with progress
+            List<Map<String, Object>> courseDetails = new ArrayList<>();
+            int totalTechnicalCompleted = 0;
+            int totalTechnicalModules = 0;
+            int totalMcqCompleted = 0;
+            int totalMcqQuestions = 0;
+            
+            for (UserCourse userCourse : userCourses) {
+                Course course = courseRepository.findById(userCourse.getCourseId()).orElse(null);
+                if (course != null) {
+                    Map<String, Object> courseDetail = new HashMap<>();
+                    courseDetail.put("courseId", course.getId());
+                    courseDetail.put("courseName", course.getName());
+                    courseDetail.put("courseLevel", course.getLevel());
+                    courseDetail.put("progress", userCourse.getProgress());
+                    courseDetail.put("completed", userCourse.isCompleted());
+                    
+                    // Format enrollment date
+                    if (userCourse.getEnrolledAt() != null) {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+                        courseDetail.put("enrolledAt", userCourse.getEnrolledAt().format(formatter));
+                    }
+                    
+                    // Format last accessed date
+                    if (userCourse.getLastAccessed() != null) {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+                        courseDetail.put("lastAccessed", userCourse.getLastAccessed().format(formatter));
+                    }
+                    
+                    // Technical content progress
+                    List<Boolean> techProgress = userCourse.getTechnicalProgress();
+                    int techTotal = course.getTechnicalContent() != null ? course.getTechnicalContent().size() : 0;
+                    int techCompleted = (int) techProgress.stream().filter(b -> b).count();
+                    courseDetail.put("technicalModulesTotal", techTotal);
+                    courseDetail.put("technicalModulesCompleted", techCompleted);
+                    courseDetail.put("technicalProgress", techProgress);
+                    
+                    totalTechnicalModules += techTotal;
+                    totalTechnicalCompleted += techCompleted;
+                    
+                    // MCQ progress
+                    List<Boolean> mcqProgressList = userCourse.getMcqProgress();
+                    int mcqTotal = course.getMcqQuestions() != null ? course.getMcqQuestions().size() : 0;
+                    int mcqCompleted = (int) mcqProgressList.stream().filter(b -> b).count();
+                    courseDetail.put("mcqQuestionsTotal", mcqTotal);
+                    courseDetail.put("mcqQuestionsCompleted", mcqCompleted);
+                    courseDetail.put("mcqProgress", mcqProgressList);
+                    
+                    totalMcqQuestions += mcqTotal;
+                    totalMcqCompleted += mcqCompleted;
+                    
+                    // Current section and position
+                    courseDetail.put("currentSection", userCourse.getCurrentSection());
+                    courseDetail.put("currentIndex", userCourse.getCurrentIndex());
+                    
+                    courseDetails.add(courseDetail);
+                }
+            }
+            
+            response.put("courseDetails", courseDetails);
+            
+            // Overall statistics
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("totalTechnicalModules", totalTechnicalModules);
+            statistics.put("completedTechnicalModules", totalTechnicalCompleted);
+            statistics.put("totalMcqQuestions", totalMcqQuestions);
+            statistics.put("completedMcqQuestions", totalMcqCompleted);
+            
+            // Calculate overall completion percentage
+            int totalItems = totalTechnicalModules + totalMcqQuestions;
+            int completedItems = totalTechnicalCompleted + totalMcqCompleted;
+            double overallCompletion = totalItems > 0 ? (completedItems * 100.0 / totalItems) : 0;
+            statistics.put("overallCompletionPercentage", Math.round(overallCompletion));
+            
+            response.put("statistics", statistics);
+            
+            // Get liked courses
+            List<String> likedCourseIds = user.getLikedCourses();
+            List<Map<String, Object>> likedCourses = new ArrayList<>();
+            if (likedCourseIds != null) {
+                for (String courseId : likedCourseIds) {
+                    Course course = courseRepository.findById(courseId).orElse(null);
+                    if (course != null) {
+                        Map<String, Object> likedCourse = new HashMap<>();
+                        likedCourse.put("courseId", course.getId());
+                        likedCourse.put("courseName", course.getName());
+                        likedCourse.put("courseLevel", course.getLevel());
+                        likedCourse.put("courseDescription", course.getDescription());
+                        likedCourses.add(likedCourse);
+                    }
+                }
+            }
+            response.put("likedCourses", likedCourses);
+            
+            // Get user progress data (game progress, points, level)
+            List<UserProgress> progressList = userProgressRepository.findByUserId(user.getId());
+            List<Map<String, Object>> gameProgress = new ArrayList<>();
+            int totalPoints = 0;
+            int averageLevel = 0;
+            
+            for (UserProgress progress : progressList) {
+                Course course = courseRepository.findById(progress.getCourseId()).orElse(null);
+                if (course != null) {
+                    Map<String, Object> progressDetail = new HashMap<>();
+                    progressDetail.put("courseId", course.getId());
+                    progressDetail.put("courseName", course.getName());
+                    progressDetail.put("level", progress.getLevel());
+                    progressDetail.put("points", progress.getPoints());
+                    progressDetail.put("knownTermsCount", progress.getKnownTerms().size());
+                    gameProgress.add(progressDetail);
+                    
+                    totalPoints += progress.getPoints();
+                    averageLevel += progress.getLevel();
+                }
+            }
+            
+            if (!progressList.isEmpty()) {
+                averageLevel = averageLevel / progressList.size();
+            }
+            
+            Map<String, Object> gameStats = new HashMap<>();
+            gameStats.put("totalPoints", totalPoints);
+            gameStats.put("averageLevel", averageLevel);
+            gameStats.put("coursesWithProgress", progressList.size());
+            gameStats.put("details", gameProgress);
+            
+            response.put("gameProgress", gameStats);
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             response.put("error", "Failed to get user: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

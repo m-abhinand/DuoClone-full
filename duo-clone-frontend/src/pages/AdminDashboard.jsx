@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiService } from '../services/api'
 import { getUser, removeUser } from '../context/UserContext'
-import { FaUser, FaBook, FaSignOutAlt, FaChartBar } from 'react-icons/fa'
+import { FaUser, FaBook, FaSignOutAlt, FaChartBar, FaChevronRight } from 'react-icons/fa'
+import CompletionRate from '../components/CompletionRate'
 
 function AdminDashboard() {
   const navigate = useNavigate()
@@ -12,6 +13,24 @@ function AdminDashboard() {
   const [users, setUsers] = useState([])
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // Function to mask email addresses
+  const maskEmail = (email) => {
+    if (!email) return ''
+    const [username, domain] = email.split('@')
+    if (!domain) return email
+    
+    const maskedUsername = username.length > 2 
+      ? username[0] + '*'.repeat(username.length - 2) + username[username.length - 1]
+      : username[0] + '*'
+    
+    const [domainName, extension] = domain.split('.')
+    const maskedDomain = domainName.length > 2
+      ? domainName[0] + '*'.repeat(domainName.length - 2) + domainName[domainName.length - 1]
+      : domainName
+    
+    return `${maskedUsername}@${maskedDomain}.${extension}`
+  }
   const [showCourseModal, setShowCourseModal] = useState(false)
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -20,6 +39,7 @@ function AdminDashboard() {
     completionRate: 0
   })
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
 
   useEffect(() => {
     const currentUser = getUser()
@@ -29,7 +49,7 @@ function AdminDashboard() {
       return
     }
 
-    setUser(currentUser)
+    setUser( currentUser)
 
     const userRole = currentUser.role?.replace('ROLE_', '')
     if (userRole !== 'ADMIN') {
@@ -159,7 +179,7 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <nav className="admin-navbar">
-        <h2>🛡️ Admin Dashboard</h2>
+        <h2>Admin Dashboard</h2>
         <div className="admin-nav-actions">
           <div className="navbar-profile">
             <button className="profile-btn" onClick={toggleProfileMenu}>
@@ -176,7 +196,7 @@ function AdminDashboard() {
                     </div>
                     <div className="profile-info">
                       <p className="profile-name">{user?.name || 'Admin'}</p>
-                      <p className="profile-email">{user?.email}</p>
+                    <p className="profile-email">{user?.email}</p>
                     </div>
                   </div>
                   
@@ -217,12 +237,13 @@ function AdminDashboard() {
               <span className="stat-label">Active Enrollments</span>
             </div>
           </div>
-          <div className="stat-card">
+          <div className="stat-card clickable" onClick={() => setShowCompletionModal(true)}>
             <FaChartBar className="stat-icon" />
             <div className="stat-info">
               <span className="stat-number">{stats.completionRate}%</span>
               <span className="stat-label">Completion Rate</span>
             </div>
+            <FaChevronRight className="stat-arrow" />
           </div>
         </section>
 
@@ -266,7 +287,7 @@ function AdminDashboard() {
                     {users.map((user, index) => (
                       <tr key={user.id || index}>
                         <td>{user.name}</td>
-                        <td>{user.email}</td>
+                        <td>{maskEmail(user.email)}</td>
                         <td>
                           <span className={`role-badge ${user.role?.toLowerCase()}`}>
                             {user.role?.replace('ROLE_', '')}
@@ -366,7 +387,12 @@ function AdminDashboard() {
           </div>
         </div>
       )}
-    </div>
+      {/* Completion Rate Modal */}
+      <CompletionRate 
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        stats={stats}
+      />    </div>
   )
 }
 

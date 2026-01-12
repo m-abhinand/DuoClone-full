@@ -65,7 +65,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 998;
+  z-index: 1100;
 }
 
 .profile-menu {
@@ -77,7 +77,7 @@
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: 8px;
-  z-index: 999;
+  z-index: 1101;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -222,25 +222,21 @@
   transform: translateY(-4px);
 }
 
-.stat-icon {
-  font-size: 2rem;
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-arrow {
+  margin-left: auto;
   color: var(--primary);
+  font-size: 1.2rem;
+  opacity: 0.7;
+  transition: all 0.3s ease;
 }
 
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--text);
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #6b5b5b;
+.stat-card.clickable:hover .stat-arrow {
+  opacity: 1;
+  transform: translateX(4px);
 }
 
 .admin-tabs {
